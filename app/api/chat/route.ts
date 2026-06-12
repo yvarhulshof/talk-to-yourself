@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
   buildSystemPrompt,
+  clampMorphWords,
   mimicryLevel,
   userWordCount,
 } from "@/lib/persona";
@@ -19,9 +20,11 @@ export async function POST(req: Request) {
   client ??= new Anthropic();
 
   let messages: Anthropic.MessageParam[];
+  let morphWords: number;
   try {
     const body = await req.json();
     messages = body.messages;
+    morphWords = clampMorphWords(body.morphWords);
     if (
       !Array.isArray(messages) ||
       messages.length === 0 ||
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
   }
 
   const words = userWordCount(messages);
-  const level = mimicryLevel(words);
+  const level = mimicryLevel(words, morphWords);
 
   const stream = client.messages.stream({
     model: "claude-opus-4-8",

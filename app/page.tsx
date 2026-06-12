@@ -1,18 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MIMICRY_LEVELS } from "@/lib/persona";
+import {
+  DEFAULT_MORPH_WORDS,
+  MAX_MORPH_WORDS,
+  MIMICRY_LEVELS,
+  MIN_MORPH_WORDS,
+  levelThresholds,
+  mimicryLevel,
+} from "@/lib/persona";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-
-const MAX_WORDS = MIMICRY_LEVELS[MIMICRY_LEVELS.length - 1].minWords;
 
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [level, setLevel] = useState(0);
   const [words, setWords] = useState(0);
+  const [morphWords, setMorphWords] = useState(DEFAULT_MORPH_WORDS);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -37,13 +42,12 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, morphWords }),
       });
       if (!res.ok || !res.body) {
         throw new Error(`Request failed (${res.status})`);
       }
 
-      setLevel(Number(res.headers.get("X-Mimicry-Level") ?? 0));
       setWords(Number(res.headers.get("X-User-Words") ?? 0));
 
       const reader = res.body.getReader();
@@ -64,8 +68,11 @@ export default function Home() {
     }
   }
 
+  // Computed client-side so the meter reacts immediately to slider changes.
+  const level = mimicryLevel(words, morphWords);
   const levelLabel = MIMICRY_LEVELS.find((l) => l.level === level)?.label ?? "";
-  const progress = Math.min(100, Math.round((words / MAX_WORDS) * 100));
+  const progress = Math.min(100, Math.round((words / morphWords) * 100));
+  const [, t1, t2, t3] = levelThresholds(morphWords);
 
   return (
     <main className="shell">
@@ -77,6 +84,21 @@ export default function Home() {
             <div className="morph-fill" style={{ width: `${progress}%` }} />
           </div>
           <span className="morph-label">{levelLabel}</span>
+        </div>
+        <div className="morph-tuner">
+          <input
+            type="range"
+            min={MIN_MORPH_WORDS}
+            max={MAX_MORPH_WORDS}
+            step={10}
+            value={morphWords}
+            onChange={(e) => setMorphWords(Number(e.target.value))}
+            aria-label="Words needed to reach full mirror"
+          />
+          <span>
+            morph pace: levels at {t1} / {t2} / {t3} of your words ({words} so
+            far)
+          </span>
         </div>
       </header>
 

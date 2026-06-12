@@ -27,12 +27,17 @@ npm run dev                  # http://localhost:3000
 The server counts how many words you've said across the conversation and maps
 that to a mimicry level (`lib/persona.ts`):
 
-| Level | Trigger | Behavior |
+| Level | Trigger (default) | Behavior |
 |---|---|---|
 | 0 | start | generic, curious assistant |
-| 1 | 100 words | mirrors your surface style (sentence length, phrasing) |
+| 1 | 100 words | mirrors your surface writing style (length, casing, punctuation, slang) |
 | 2 | 300 words | builds a model of you; half assistant, half you |
-| 3 | 700 words | acts fully as you — "talking to yourself" |
+| 3 | 700 words | indistinguishable — full writing fingerprint, opinions, humor, and knowledge boundaries |
+
+The pace is tunable with the slider in the header: it sets the word count for
+the final level (30–2000, default 700) and the intermediate levels scale
+proportionally. The value is sent with each request, so you can speed up or
+slow down the morph mid-conversation.
 
 Each chat turn sends the whole transcript to Claude (`claude-opus-4-8`) with a
 stable cached system prompt plus the current level's instruction. Replies are
