@@ -8,8 +8,8 @@ See [PLAN.md](./PLAN.md) for the full technical plan and cost analysis.
 
 ## Status
 
-- ✅ **Phase 1 — text skeleton**: chat UI, streaming Claude responses, mimicry
-  level escalating with your word count (watch the morph meter).
+- ✅ **Phase 1 — text skeleton**: chat UI, streaming Claude responses, full
+  mimicry from the first message, backed by an AI-maintained model of you.
 - ⬜ Phase 2 — voice loop (mic → STT → TTS on a stock voice)
 - ⬜ Phase 3 — the voice morph (instant voice cloning of the user)
 - ⬜ Phase 4 — polish (Deepgram STT, interruptions, persistence)
@@ -22,24 +22,24 @@ npm install
 npm run dev                  # http://localhost:3000
 ```
 
-## How the personality morph works
+## How the personality mirror works
 
-The server counts how many words you've said across the conversation and maps
-that to a mimicry level (`lib/persona.ts`):
+There are no stages: from your first message the AI is instructed to mirror
+you as accurately as the transcript allows — writing fingerprint, opinions,
+humor, knowledge boundaries. Fidelity grows naturally as you say more, because
+there's simply more of you to model.
 
-| Level | Trigger (default) | Behavior |
-|---|---|---|
-| 0 | start | generic, curious assistant |
-| 1 | 100 words | mirrors your surface writing style (length, casing, punctuation, slang) |
-| 2 | 300 words | builds a model of you; half assistant, half you |
-| 3 | 700 words | indistinguishable — full writing fingerprint, opinions, humor, and knowledge boundaries |
+Two Claude calls per turn (`claude-opus-4-8`, transcript prompt-cached
+incrementally):
 
-The pace is tunable with the slider in the header: it sets the word count for
-the final level (30–2000, default 700) and the intermediate levels scale
-proportionally. The value is sent with each request, so you can speed up or
-slow down the morph mid-conversation.
+1. **Chat** (`/api/chat`): whole transcript + a stable cached system prompt +
+   the current *user model* document, streamed back as the reply.
+2. **User model** (`/api/profile`, fired in the background after each reply):
+   regenerates a document describing everything the AI can infer about you —
+   facts, personality and psychology, values, interests, likes/dislikes,
+   humor, knowledge boundaries, writing-style fingerprint with verbatim
+   examples. That document feeds the next chat turn. You can peek at it via
+   "its model of you" in the header.
 
-Each chat turn sends the whole transcript to Claude (`claude-opus-4-8`) with a
-stable cached system prompt plus the current level's instruction. Replies are
-written for speech (short, no markdown) so Phase 2 can pipe them straight into
-TTS.
+Replies are written for speech (short, no markdown) until your own style takes
+over, so Phase 2 can pipe them straight into TTS.

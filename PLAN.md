@@ -45,32 +45,37 @@ audio playback (Web Audio)   ←   TTS: ElevenLabs (or Cartesia)
 
 **Stack:** Next.js (App Router) single deployable app. API keys live server-side
 only; the browser talks to our API routes, never to vendors directly. State for a
-session: transcript array, accumulated user-audio buffer, current `voice_id`,
-current "mimicry level". No database needed for v1 (in-memory / session storage);
-add persistence later if conversations should survive reloads.
+session: transcript array, the user-model document, accumulated user-audio
+buffer, current `voice_id`. No database needed for v1 (in-memory / session
+storage); add persistence later if conversations should survive reloads.
 
 ## 3. The morph mechanics
 
 ### 3a. Personality morph (LLM)
 
-Single Claude call per turn. The system prompt contains a **mimicry level** that the
-server escalates with conversation length (e.g. by cumulative user word count):
+**No staged escalation.** (Earlier versions of this plan had 4 word-count-driven
+mimicry levels; the user removed them — mimicry deepens naturally as the
+transcript grows, so the staging added logic without adding behavior.) The chat
+prompt instructs full mimicry from the first message: mirror the user as
+accurately as the conversation so far allows, staying plausibly neutral where
+data is missing.
 
-- **Level 0 (0–100 words):** generic, friendly assistant. Asks natural questions
-  (which conveniently elicits voice + personality data).
-- **Level 1 (100–300 words):** "Subtly adopt the user's vocabulary, sentence
-  length, and tone."
-- **Level 2 (300–700 words):** "Build an explicit model of the user (personality,
-  interests, likes/dislikes, speech patterns) from the transcript and increasingly
-  respond the way they would."
-- **Level 3 (700+ words):** full version of the prompt from the idea: *"Using this
-  model of the user, act like the user as naturally as you can. The user should
-  feel like they are talking to themselves."*
+Two Claude calls per turn:
+
+1. **Chat call** — system prompt = stable mimicry core + the current
+   **user-model document**, messages = full transcript, reply streamed.
+2. **User-model call** (background, after each completed turn) — regenerates a
+   document capturing everything inferable about the person: facts/background,
+   personality and psychology, values and opinions, interests, likes/dislikes,
+   humor, knowledge/vocabulary boundaries, and the writing-style fingerprint
+   with verbatim examples. The document feeds the next chat call. With prompt
+   caching the transcript re-read is ~0.1× price, so per-turn regeneration is
+   affordable.
 
 Implementation details:
-- The escalating instruction is appended **after** the stable system-prompt core so
-  prompt caching keeps working (cache breakpoint on the stable core; transcript is
-  the messages array and caches incrementally per turn).
+- The volatile user-model document is appended **after** the stable system-prompt
+  core so prompt caching keeps working (cache breakpoint on the stable core;
+  transcript is the messages array and caches incrementally per turn).
 - Model: `claude-opus-4-8` (best persona inference); drop to `claude-sonnet-4-6`
   if cost matters (≈40% cheaper, still strong).
 - Streaming responses, sentence-chunked into the TTS as they arrive, to keep
@@ -87,13 +92,13 @@ recommendation:
    - Phase B (enough audio collected): create the instant clone, but keep
      "assistant-like" delivery — on ElevenLabs, set high `stability` / low `style`
      so it sounds like the user's timbre with neutral prosody.
-   - Phase C: relax the voice settings toward natural/expressive, and the persona
-     prompt is at Level 3 — now it both sounds and talks like the user.
+   - Phase C: relax the voice settings toward natural/expressive — now it both
+     sounds and talks like the user.
    This gives a perceptual 3-step morph without any unsupported audio DSP.
 2. **All-at-once switch:** simplest fallback — swap `voice_id` once the clone is
    ready, ideally at a dramatically appropriate moment ("…you sound different" is
    actually a feature here).
-3. **Re-cloning at increasing quality:** Cartesia clones from 3–10s, so you can
+3. **Re-cloning at increasing quality:** Cartesia clones from 3–10 s, so you can
    create a rough clone very early and **re-clone with more audio** every minute or
    two — each clone is noticeably better, which itself reads as gradual morphing.
 
@@ -160,14 +165,14 @@ Web Speech API for STT ($0) + ElevenLabs Starter ($5) + Claude pay-as-you-go
 
 ## 5. Build phases
 
-1. **Phase 1 — Text skeleton.** Next.js app, chat UI, Claude with the leveled
-   persona prompt, mimicry escalation by word count. Proves the personality morph
-   with zero audio complexity.
+1. **Phase 1 — Text skeleton.** Next.js app, chat UI, Claude with the full-mimicry
+   persona prompt plus the per-turn user-model document. Proves the personality
+   morph with zero audio complexity.
 2. **Phase 2 — Voice loop.** Mic capture, Web Speech API STT, ElevenLabs streaming
    TTS on a stock voice. Proves the latency budget (target < 1.5 s end of user
    speech → first AI audio).
 3. **Phase 3 — The morph.** Background audio accumulation, IVC creation at the
-   threshold, voice_id swap + voice-settings ramp, synced with persona levels.
+   threshold, voice_id swap + voice-settings ramp as the clone matures.
 4. **Phase 4 — Polish.** Deepgram STT, interruption handling (stop TTS when user
    speaks), session persistence, a visual "morph meter" so the user can watch the
    AI become them.

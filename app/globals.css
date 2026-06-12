@@ -36,54 +36,49 @@ header.top {
 }
 
 header.top h1 {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 20px;
   font-weight: normal;
   font-style: italic;
   letter-spacing: 0.5px;
 }
 
-.morph-meter {
+.top-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
+}
+
+.profile-toggle {
+  background: none;
+  border: 1px solid #2a2d35;
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 5px 10px;
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 12px;
-  color: var(--muted);
+  cursor: pointer;
 }
 
-.morph-track {
-  flex: 1;
-  height: 4px;
-  background: #23262d;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.morph-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #5a6acf, var(--accent));
-  transition: width 600ms ease;
-}
-
-.morph-label {
-  white-space: nowrap;
+.profile-toggle:hover {
   color: var(--accent);
+  border-color: var(--accent);
 }
 
-.morph-tuner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
+.profile-panel {
+  margin-top: 10px;
+  max-height: 40dvh;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid #23262d;
+  border-radius: 10px;
+  padding: 12px 14px;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1.55;
   color: var(--muted);
-}
-
-.morph-tuner input[type="range"] {
-  flex: 0 0 140px;
-  accent-color: var(--accent);
+  white-space: pre-wrap;
 }
 
 .messages {

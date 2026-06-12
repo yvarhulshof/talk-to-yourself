@@ -1,9 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
-  buildSystemPrompt,
-  clampMorphWords,
-  mimicryLevel,
-  userWordCount,
+  buildChatSystemPrompt,
+  withTranscriptCacheBreakpoint,
 } from "@/lib/persona";
 
 export const runtime = "nodejs";
@@ -20,11 +18,14 @@ export async function POST(req: Request) {
   client ??= new Anthropic();
 
   let messages: Anthropic.MessageParam[];
-  let morphWords: number;
+  let profile: string | null;
   try {
     const body = await req.json();
     messages = body.messages;
-    morphWords = clampMorphWords(body.morphWords);
+    profile =
+      typeof body.profile === "string" && body.profile.trim()
+        ? body.profile
+        : null;
     if (
       !Array.isArray(messages) ||
       messages.length === 0 ||
@@ -34,19 +35,16 @@ export async function POST(req: Request) {
     }
   } catch {
     return Response.json(
-      { error: "Body must be { messages: MessageParam[] } ending in a user turn." },
+      { error: "Body must be { messages: MessageParam[], profile?: string } ending in a user turn." },
       { status: 400 },
     );
   }
 
-  const words = userWordCount(messages);
-  const level = mimicryLevel(words, morphWords);
-
   const stream = client.messages.stream({
     model: "claude-opus-4-8",
     max_tokens: 1024,
-    system: buildSystemPrompt(level),
-    messages,
+    system: buildChatSystemPrompt(profile),
+    messages: withTranscriptCacheBreakpoint(messages),
   });
 
   const encoder = new TextEncoder();
@@ -66,8 +64,6 @@ export async function POST(req: Request) {
   return new Response(readable, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
-      "X-Mimicry-Level": String(level),
-      "X-User-Words": String(words),
     },
   });
 }
