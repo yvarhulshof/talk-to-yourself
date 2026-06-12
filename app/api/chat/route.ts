@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   }
 
   const stream = client.messages.stream({
-    model: "claude-opus-4-8",
+    model: "claude-sonnet-4-6",
     max_tokens: 1024,
     system: buildChatSystemPrompt(profile),
     messages: withTranscriptCacheBreakpoint(messages),

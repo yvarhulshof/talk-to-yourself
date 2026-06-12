@@ -28,7 +28,7 @@ mic (MediaRecorder /         →   STT: Deepgram streaming WebSocket
  getUserMedia)                       (or free browser Web Speech API in v1)
                                           │ transcript (user turn)
                                           ▼
-                                 LLM: Claude (claude-opus-4-8)
+                                 LLM: Claude (claude-sonnet-4-6)
                                      system prompt = persona-morph prompt
                                      + full transcript (prompt-cached)
                                           │ reply text (streamed)
@@ -76,8 +76,8 @@ Implementation details:
 - The volatile user-model document is appended **after** the stable system-prompt
   core so prompt caching keeps working (cache breakpoint on the stable core;
   transcript is the messages array and caches incrementally per turn).
-- Model: `claude-opus-4-8` (best persona inference); drop to `claude-sonnet-4-6`
-  if cost matters (≈40% cheaper, still strong).
+- Model: `claude-sonnet-4-6` (chosen for cost — ≈40% cheaper than Opus, still
+  strong at persona inference; the user explicitly downgraded from Opus).
 - Streaming responses, sentence-chunked into the TTS as they arrive, to keep
   voice latency low.
 
@@ -137,8 +137,8 @@ matters more than peak quality.
 
 | Component | Assumption | Cost |
 |---|---|---|
-| LLM — Claude Opus 4.8 ($5/MTok in, $25/MTok out) | ~60k cumulative input tokens (mostly cache reads at ~0.1×), ~3k output | **$0.10–0.25** |
-| LLM — if Sonnet 4.6 instead ($3/$15) | same shape | $0.06–0.15 |
+| LLM — Claude Sonnet 4.6 ($3/MTok in, $15/MTok out) | ~60k cumulative input tokens (mostly cache reads at ~0.1×), ~3k output | **$0.06–0.15** |
+| LLM — if Opus 4.8 instead ($5/$25) | same shape | $0.10–0.25 |
 | TTS — ElevenLabs Flash ($0.05/1k chars) | ~5 min speech ≈ 3,800 chars | **~$0.19** |
 | TTS — if Cartesia (~$0.03/min) | 5 min | ~$0.15 |
 | STT — Deepgram streaming ($0.0077/min) | 10 min | **~$0.08** |

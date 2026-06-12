@@ -33,6 +33,31 @@ body {
 header.top {
   padding: 18px 4px 12px;
   border-bottom: 1px solid #23262d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+button.ghost {
+  background: none;
+  border: 1px solid #2a2d35;
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button.ghost:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+button.ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 header.top h1 {
@@ -244,11 +269,83 @@ aside.model {
   line-height: 1.6;
 }
 
+.voice-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.voice-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4caf7d;
+  flex-shrink: 0;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.voice-dot.speaking {
+  background: var(--accent);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.voice-live {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+}
+
+.voice-clone {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
 form.composer {
   display: flex;
   gap: 8px;
   padding: 12px 0 20px;
   border-top: 1px solid #23262d;
+}
+
+form.composer button.mic,
+form.composer button.ptt {
+  align-self: flex-end;
+  background: none;
+  border: 1px solid #2a2d35;
+  color: var(--muted);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+form.composer button.mic.on {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+form.composer button.ptt.holding {
+  background: var(--accent);
+  color: #1a120c;
+  border-color: var(--accent);
 }
 
 form.composer textarea {
