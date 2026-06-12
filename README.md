@@ -35,11 +35,16 @@ incrementally):
 1. **Chat** (`/api/chat`): whole transcript + a stable cached system prompt +
    the current *user model* document, streamed back as the reply.
 2. **User model** (`/api/profile`, fired in the background after each reply):
-   regenerates a document describing everything the AI can infer about you —
+   updates a document describing everything the AI can infer about you —
    facts, personality and psychology, values, interests, likes/dislikes,
    humor, knowledge boundaries, writing-style fingerprint with verbatim
-   examples. That document feeds the next chat turn. You can peek at it via
-   "its model of you" in the header.
+   examples — by merging the prior document with the current transcript.
+   That document feeds the next chat turn.
+
+The document is the app's **memory**: it's saved in your browser
+(localStorage) and survives across conversations, so a fresh chat starts
+already knowing you. It's rendered in the right-hand panel, where you can
+download it as markdown ("save .md") or erase it ("forget me").
 
 Replies are written for speech (short, no markdown) until your own style takes
 over, so Phase 2 can pipe them straight into TTS.

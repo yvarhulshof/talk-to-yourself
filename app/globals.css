@@ -22,16 +22,16 @@ body {
 }
 
 .shell {
-  max-width: 720px;
+  max-width: 1140px;
   margin: 0 auto;
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: 0 16px;
+  padding: 0 20px;
 }
 
 header.top {
-  padding: 20px 4px 12px;
+  padding: 18px 4px 12px;
   border-bottom: 1px solid #23262d;
 }
 
@@ -43,42 +43,155 @@ header.top h1 {
   letter-spacing: 0.5px;
 }
 
-.top-row {
+.columns {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 24px;
+}
+
+.chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+aside.model {
+  width: 380px;
+  flex-shrink: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #23262d;
+  padding: 14px 0 20px 24px;
+}
+
+.model-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #23262d;
 }
 
-.profile-toggle {
+.model-title {
+  font-style: italic;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.model-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.model-actions button {
   background: none;
   border: 1px solid #2a2d35;
   color: var(--muted);
   border-radius: 8px;
-  padding: 5px 10px;
+  padding: 4px 10px;
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 12px;
   cursor: pointer;
 }
 
-.profile-toggle:hover {
+.model-actions button:hover:not(:disabled) {
   color: var(--accent);
   border-color: var(--accent);
 }
 
-.profile-panel {
-  margin-top: 10px;
-  max-height: 40dvh;
+.model-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.model-body {
+  flex: 1;
   overflow-y: auto;
-  background: var(--panel);
-  border: 1px solid #23262d;
-  border-radius: 10px;
-  padding: 12px 14px;
+  padding: 14px 6px 14px 0;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 12px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #c8cdd5;
+}
+
+.model-empty {
+  margin: 0;
   color: var(--muted);
-  white-space: pre-wrap;
+  font-style: italic;
+}
+
+.model-body h1 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.model-body h2 {
+  margin: 20px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.model-body h3 {
+  margin: 14px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.model-body p {
+  margin: 6px 0;
+}
+
+.model-body ul,
+.model-body ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.model-body li {
+  margin: 4px 0;
+}
+
+.model-body strong {
+  color: var(--text);
+}
+
+.model-body blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.model-body code {
+  font-size: 13px;
+  background: var(--panel);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+@media (max-width: 880px) {
+  .columns {
+    flex-direction: column-reverse;
+  }
+
+  aside.model {
+    width: auto;
+    border-left: none;
+    border-bottom: 1px solid #23262d;
+    padding: 12px 0;
+    max-height: 32dvh;
+  }
 }
 
 .messages {

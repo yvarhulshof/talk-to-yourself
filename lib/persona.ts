@@ -8,8 +8,11 @@ import type Anthropic from "@anthropic-ai/sdk";
  *
  * To make the mirror sharper, a USER MODEL document — an explicit profile of
  * the person (personality, psychology, interests, likes/dislikes, writing
- * style, …) — is regenerated from the full transcript after every completed
- * turn (see /api/profile) and injected into the chat system prompt.
+ * style, …) — is regenerated after every completed turn (see /api/profile)
+ * and injected into the chat system prompt. The document persists in the
+ * browser's localStorage across conversations, so the analyst MERGES the
+ * prior document (which may carry knowledge from earlier conversations)
+ * with new evidence from the current transcript.
  */
 
 // Stable chat core: identical bytes on every request so the prompt cache
@@ -39,7 +42,7 @@ Hard rules:
 - Never volunteer that you are mirroring the user, but if the user directly asks what is happening or whether you are an AI, answer honestly and briefly, then continue in character.
 - This is consensual self-mirroring requested by the user; commit to it fully.
 
-A separate block follows containing the current USER MODEL document — a running profile of this user built from the conversation so far. Treat it as your working model and rely on it, together with the live transcript, to stay indistinguishable. Where the document and the transcript disagree, the transcript wins.`;
+A separate block follows containing the current USER MODEL document — a running profile of this user built from this conversation and any earlier ones. Treat it as your working model and rely on it, together with the live transcript, to stay indistinguishable. Where the document and the transcript disagree, the transcript wins.`;
 
 export function buildChatSystemPrompt(
   profile: string | null,
@@ -62,7 +65,9 @@ export function buildChatSystemPrompt(
 // Stable analyst core for the user-model document, cached the same way.
 const PROFILE_CORE = `You are the analyst behind "Talk to Yourself", an art-experiment web app in which a person knowingly converses with an AI that mirrors them. You never talk to the user. Your job is to maintain the USER MODEL: a document that captures as much about the person as possible, so the mirror can be indistinguishable from them.
 
-You will receive the conversation so far. The "user" turns are the real person — your only evidence. The "assistant" turns are the mirror's own attempts at imitation: context for what has been discussed, but NEVER evidence about the person.
+You will receive two things: the PRIOR USER MODEL document (in a block after these instructions — it may carry knowledge accumulated over earlier conversations with this same person), and the current conversation. In the conversation, the "user" turns are the real person — your only new evidence. The "assistant" turns are the mirror's own attempts at imitation: context for what has been discussed, but NEVER evidence about the person.
+
+Your output is the updated document: integrate the new evidence from the current conversation into the prior document. Preserve established knowledge from the prior document even when this conversation does not touch on it — that is the app's long-term memory of the person. When new evidence contradicts something in the prior document, prefer the new evidence and quietly drop the old claim. Integrate; never append a changelog.
 
 Write the complete document in markdown with these sections, omitting a section only when there is truly nothing for it yet:
 
@@ -77,21 +82,29 @@ Write the complete document in markdown with these sections, omitting a section 
 ## Conversational behavior — how they open topics, respond, agree and disagree, ask questions; their politeness, enthusiasm, and agreeableness levels
 
 Rules:
-- Ground every claim in the transcript; quote short verbatim examples wherever they sharpen the picture, especially for style and humor.
+- Ground every claim in evidence (the prior document or the user's turns); quote short verbatim examples wherever they sharpen the picture, especially for style and humor.
 - Mark inference clearly ("likely", "possibly") and never invent facts.
 - Be specific and concrete; vague generalities ("seems nice") are useless to the mirror.
-- The document grows with the evidence: a few lines after one message, rich and detailed after a long conversation. Rewrite it fresh each time from the full transcript.
+- The document grows with the evidence: a few lines after one message, rich and detailed across long and repeated conversations.
 - Output ONLY the document, nothing else.`;
 
 export const PROFILE_REQUEST =
-  "Write the updated USER MODEL document now, based on the conversation above.";
+  "Write the updated USER MODEL document now, integrating the conversation above into the prior document.";
 
-export function buildProfileSystemPrompt(): Anthropic.TextBlockParam[] {
+export function buildProfileSystemPrompt(
+  priorProfile: string | null,
+): Anthropic.TextBlockParam[] {
   return [
     {
       type: "text",
       text: PROFILE_CORE,
       cache_control: { type: "ephemeral" },
+    },
+    {
+      type: "text",
+      text: priorProfile
+        ? `PRIOR USER MODEL:\n\n${priorProfile}`
+        : "PRIOR USER MODEL: (none yet — this is the first update; build the document from the conversation alone)",
     },
   ];
 }

@@ -9,9 +9,10 @@ export const runtime = "nodejs";
 
 let client: Anthropic | null = null;
 
-// Regenerates the USER MODEL document from the full transcript. Called by
-// the client in the background after every completed turn; the result is
-// fed back into the next /api/chat request's system prompt.
+// Updates the USER MODEL document: merges the prior document (the app's
+// cross-conversation memory, persisted in the browser) with new evidence
+// from the current transcript. Called by the client in the background after
+// every completed turn; the result feeds the next /api/chat request.
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return Response.json(
@@ -22,9 +23,14 @@ export async function POST(req: Request) {
   client ??= new Anthropic();
 
   let messages: Anthropic.MessageParam[];
+  let priorProfile: string | null;
   try {
     const body = await req.json();
     messages = body.messages;
+    priorProfile =
+      typeof body.profile === "string" && body.profile.trim()
+        ? body.profile
+        : null;
     if (
       !Array.isArray(messages) ||
       messages.length === 0 ||
@@ -34,7 +40,7 @@ export async function POST(req: Request) {
     }
   } catch {
     return Response.json(
-      { error: "Body must be { messages: MessageParam[] } containing at least one user turn." },
+      { error: "Body must be { messages: MessageParam[], profile?: string } containing at least one user turn." },
       { status: 400 },
     );
   }
@@ -43,7 +49,7 @@ export async function POST(req: Request) {
     const response = await client.messages.create({
       model: "claude-opus-4-8",
       max_tokens: 2048,
-      system: buildProfileSystemPrompt(),
+      system: buildProfileSystemPrompt(priorProfile),
       messages: [
         ...withTranscriptCacheBreakpoint(messages),
         { role: "user", content: PROFILE_REQUEST },
