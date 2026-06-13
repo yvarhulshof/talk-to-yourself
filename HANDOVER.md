@@ -16,6 +16,12 @@ The end state: talking to it feels like talking to yourself.
 `claude/pensive-pascal-5etp7w`; repo default branch has no commits). Develop
 here unless the user says otherwise.
 
+**Clean handoff point.** HEAD is `319fab4` ("Switch to Sonnet 4.6 and
+implement Phases 2-4"). Working tree is clean, `npm run build` passes, nothing
+is half-finished, and there is no committed pending task. The single most
+useful next action is a real browser run of voice mode with live API keys
+(see "Possible next steps") — the user adds the keys, so don't block on them.
+
 **All four build phases are implemented** (builds clean, route plumbing
 smoke-tested with curl; live audio not testable in the cloud env):
 
